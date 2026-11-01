@@ -1,0 +1,21 @@
+{
+  "name": "orbit-snap",
+  "version": "1.0.0",
+  "description": "ORBIT SNAP: Hyper Drift Arcade - Addictive Viral Kinetic Mini-Game",
+  "main": "index.html",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js"
+  },
+  "keywords": [
+    "game",
+    "html5-game",
+    "canvas",
+    "web-audio",
+    "arcade",
+    "viral-game",
+    "one-touch"
+  ],
+  "author": "Google DeepMind Advanced Agentic Coding",
+  "license": "MIT"
+}

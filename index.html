@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#050212">
+  <title>ORBIT SNAP - Hyper Drift Arcade</title>
+
+  <!-- Google Font: Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Google AdSense Integration (Replace ca-pub-0000000000000000 with your Publisher ID) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Fullscreen WebGL/Canvas -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- In-Game Toast Notifications -->
+  <div id="toastContainer"></div>
+
+  <!-- Dynamic Challenger Banner (Shown when opened via challenge link) -->
+  <div id="challengeBanner" class="hidden">
+    <div id="challengeText">⚔️ A pilot challenged you to beat their score!</div>
+  </div>
+
+  <!-- HUD Overlay -->
+  <div id="hudOverlay">
+    <div class="hud-top">
+      <!-- Top Left: Best Score & Daily Challenge -->
+      <div class="hud-left">
+        <div>
+          <div id="bestScore" class="best-score">BEST: 0</div>
+          <div id="dailyBadge" class="daily-badge">📅 DAILY DRIFT</div>
+        </div>
+        <button id="btnDailyMode" class="icon-btn interactive-ui" title="Toggle Daily Challenge Mode">📅</button>
+      </div>
+
+      <!-- Center: Big Live Score & Multiplier -->
+      <div class="hud-center">
+        <div id="liveScore" class="live-score">0</div>
+        <div id="liveCombo" class="live-combo hidden">2x</div>
+      </div>
+
+      <!-- Top Right: Navigation & Mute -->
+      <div class="hud-right">
+        <button id="btnOpenSkins" class="icon-btn interactive-ui" title="Pilot Skins">🚀</button>
+        <button id="btnOpenLeaderboard" class="icon-btn interactive-ui" title="Global Leaderboard">🏆</button>
+        <button id="btnOpenAchievements" class="icon-btn interactive-ui" title="Achievements">🎖️</button>
+        <button id="btnMute" class="icon-btn interactive-ui" title="Toggle Sound">🔊</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER MODAL -->
+  <div id="gameOverModal" class="modal hidden">
+    <div class="modal-content gameover-box">
+      <div class="gameover-tag">RUN TERMINATED</div>
+      <div id="gameOverTitle" class="gameover-title">Cosmic Drift</div>
+
+      <div id="newHighScoreBadge" class="new-high-badge hidden">🏆 NEW PERSONAL BEST!</div>
+
+      <div class="score-display-wrapper">
+        <div id="finalScore" class="final-score">0</div>
+        <div class="final-score-label">FINAL SCORE</div>
+      </div>
+
+      <div id="newSkinAlert" class="new-skin-alert hidden">🎉 Unlocked New Skin!</div>
+
+      <!-- Stat Grid -->
+      <div class="stat-grid">
+        <div class="stat-cell">
+          <div id="statCombo" class="stat-value" style="color: var(--neon-magenta)">1x</div>
+          <div class="stat-label">MAX COMBO</div>
+        </div>
+        <div class="stat-cell">
+          <div id="statNearMiss" class="stat-value" style="color: var(--neon-gold)">0</div>
+          <div class="stat-label">NEAR MISSES</div>
+        </div>
+        <div class="stat-cell">
+          <div id="statDistance" class="stat-value" style="color: var(--neon-lime)">0m</div>
+          <div class="stat-label">DISTANCE</div>
+        </div>
+        <div class="stat-cell">
+          <div id="statSnaps" class="stat-value" style="color: var(--neon-cyan)">0</div>
+          <div class="stat-label">TOTAL SNAPS</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-stack">
+        <button id="btnRestart" class="btn-primary">
+          <span>⚡ PLAY AGAIN</span>
+          <span style="font-size: 0.8rem; opacity: 0.8;">(or tap screen / Space)</span>
+        </button>
+
+        <div class="btn-row">
+          <button id="btnShareGameOver" class="btn-secondary">
+            <span>📤 Share Score</span>
+          </button>
+          <button id="btnChallengeFriend" class="btn-secondary">
+            <span>⚔️ Challenge Link</span>
+          </button>
+        </div>
+
+        <button id="btnDownloadCard" class="btn-secondary">
+          <span>🖼️ Save 1080x1350 Poster</span>
+        </button>
+      </div>
+
+      <!-- Monetization: Google AdSense Ad Slot (Displays after each run) -->
+      <div class="ad-slot-container">
+        <div class="ad-placeholder-label">SPONSORED</div>
+        <ins class="adsbygoogle"
+             style="display:block; min-height: 60px;"
+             data-ad-client="ca-pub-0000000000000000"
+             data-ad-slot="1234567890"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
+        <script>
+             try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+        </script>
+      </div>
+    </div>
+  </div>
+
+  <!-- SKINS MODAL -->
+  <div id="skinsModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🚀 PILOT HANGAR</div>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <div id="skinsList" class="skins-grid">
+        <!-- Rendered dynamically by skins.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD MODAL -->
+  <div id="leaderboardModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🏆 GLOBAL RANKINGS</div>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+
+      <div class="player-tag-row">
+        <label for="playerTagInput">Callsign:</label>
+        <input type="text" id="playerTagInput" maxlength="15" placeholder="Your Pilot Tag">
+      </div>
+
+      <div id="leaderboardList" class="leaderboard-list">
+        <!-- Rendered dynamically by leaderboard.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ACHIEVEMENTS MODAL -->
+  <div id="achievementsModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">🎖️ ACHIEVEMENTS</div>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <div id="achievementsList" class="achievements-list">
+        <!-- Rendered dynamically by achievements.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Core Game Scripts Bundle -->
+  <script src="js/app.js"></script>
+</body>
+</html>

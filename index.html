@@ -886,59 +886,6 @@ html, body {
              data-ad-format="horizontal"
              data-full-width-responsive="true"></ins>
         <script>
-             try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
-        </script>
-      </div>
-    </div>
-  </div>
-
-  <!-- SKINS MODAL -->
-  <div id="skinsModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">🚀 PILOT HANGAR</div>
-        <button class="close-modal-btn">&times;</button>
-      </div>
-      <div id="skinsList" class="skins-grid">
-        <!-- Rendered dynamically by skins.js -->
-      </div>
-    </div>
-  </div>
-
-  <!-- LEADERBOARD MODAL -->
-  <div id="leaderboardModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">🏆 GLOBAL RANKINGS</div>
-        <button class="close-modal-btn">&times;</button>
-      </div>
-
-      <div class="player-tag-row">
-        <label for="playerTagInput">Callsign:</label>
-        <input type="text" id="playerTagInput" maxlength="15" placeholder="Your Pilot Tag">
-      </div>
-
-      <div id="leaderboardList" class="leaderboard-list">
-        <!-- Rendered dynamically by leaderboard.js -->
-      </div>
-    </div>
-  </div>
-
-  <!-- ACHIEVEMENTS MODAL -->
-  <div id="achievementsModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">🎖️ ACHIEVEMENTS</div>
-        <button class="close-modal-btn">&times;</button>
-      </div>
-      <div id="achievementsList" class="achievements-list">
-        <!-- Rendered dynamically by achievements.js -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Core Game Scripts Bundle -->
-  <script>
 /**
  * ORBIT SNAP - Procedural Web Audio Engine
  * Pure procedural audio synthesis - 0 external audio dependencies!
@@ -3999,7 +3946,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const skinsModal = document.getElementById('skinsModal');
   const leaderboardModal = document.getElementById('leaderboardModal');
   const achievementsModal = document.getElementById('achievementsModal');
-  const shareCardModal = document.getElementById('shareCardModal');
 
   // Game Over Elements
   const finalScoreEl = document.getElementById('finalScore');
@@ -4073,20 +4019,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // =================== INPUT CONTROLS ===================
 
-  let activeTouchId = null;
+  let gameOverTimeout = null;
 
   function onPointerDown(e) {
-    // Ignore clicks on UI buttons/modals
-    if (e.target.closest('button, .modal, .interactive-ui')) return;
+    // If clicking on specific interactive sub-actions inside modals or HUD, let those elements handle their clicks
+    if (e.target.closest('#btnShareGameOver, #btnChallengeFriend, #btnDownloadCard, .close-modal-btn, #btnOpenSkins, #btnOpenLeaderboard, #btnOpenAchievements, #btnDailyMode, #btnMute, #playerTagInput, .skin-card, .leaderboard-row')) {
+      return;
+    }
 
     // Initialize AudioContext on first user gesture
     if (window.audioManager && !window.audioManager.initialized) {
       window.audioManager.init();
     }
 
-    // Instant restart from Game Over by tapping anywhere
+    // Instant restart from Game Over by tapping the restart button or anywhere on screen
     if (engine.state === 'GAMEOVER') {
-      restartGame();
+      restartGame(engine.isDaily);
+      return;
+    }
+
+    // If an informational modal (Skins, Leaderboard, Achievements) is open, clicking outside shouldn't tether
+    if (e.target.closest('#skinsModal, #leaderboardModal, #achievementsModal')) {
       return;
     }
 
@@ -4094,7 +4047,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function onPointerUp(e) {
-    if (e.target.closest('button, .modal, .interactive-ui')) return;
+    if (e.target.closest('button, .interactive-ui, #skinsModal, #leaderboardModal, #achievementsModal')) return;
     engine.handleRelease();
   }
 
@@ -4114,13 +4067,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (engine.state === 'GAMEOVER') {
-        restartGame();
+        restartGame(engine.isDaily);
         return;
       }
 
       engine.handlePress();
     } else if (e.code === 'KeyR') {
-      restartGame();
+      restartGame(engine.isDaily);
     } else if (e.code === 'KeyM') {
       if (window.audioManager) {
         window.audioManager.setMuted(!window.audioManager.muted);
@@ -4173,21 +4126,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update High Score Display
     bestScoreEl.textContent = `BEST: ${stats.highScore.toLocaleString()}`;
 
-    // Show Game Over Modal
-    setTimeout(() => {
-      gameOverModal.classList.remove('hidden');
-    }, 400);
+    // Safely schedule Game Over Modal display
+    if (gameOverTimeout) clearTimeout(gameOverTimeout);
+    gameOverTimeout = setTimeout(() => {
+      if (engine.state === 'GAMEOVER') {
+        gameOverModal.classList.remove('hidden');
+      }
+    }, 350);
   };
 
   // =================== RESTART FUNCTIONALITY ===================
 
   function restartGame(isDaily = false) {
+    if (gameOverTimeout) {
+      clearTimeout(gameOverTimeout);
+      gameOverTimeout = null;
+    }
     closeAllModals();
     engine.start(isDaily);
   }
 
   btnRestart.addEventListener('click', (e) => {
     e.stopPropagation();
+    e.preventDefault();
     if (window.audioManager) window.audioManager.playUiClick();
     restartGame(engine.isDaily);
   });
@@ -4204,9 +4165,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // =================== MODAL CONTROLLERS ===================
 
   function closeAllModals() {
-    [gameOverModal, skinsModal, leaderboardModal, achievementsModal, shareCardModal].forEach(
-      (m) => m.classList.add('hidden')
-    );
+    [gameOverModal, skinsModal, leaderboardModal, achievementsModal].forEach((m) => {
+      if (m && m.classList) {
+        m.classList.add('hidden');
+      }
+    });
   }
 
   document.querySelectorAll('.close-modal-btn').forEach((btn) => {
